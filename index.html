@@ -72,11 +72,15 @@ input:focus{border-color:#3a424b}
 .rtt span{font:12px var(--m);color:var(--mut);cursor:pointer}.rtt span.in{color:var(--ok)}
 .rn{display:flex;align-items:center;gap:6px;font:500 13px var(--m)}
 .rt button{padding:7px 12px}.rt .pl{margin:0}
-#rv{flex:1;overflow:auto;background:#0a0b0d;padding:12px 12px 80px;-webkit-overflow-scrolling:touch}
+#rv{flex:1;overflow:auto;background:#0a0b0d;padding:12px;-webkit-overflow-scrolling:touch}
 #rc{display:block;margin:0 auto;max-width:none;background:#fff;border-radius:4px}
 #rc.inv{filter:invert(.9) hue-rotate(180deg)}
 #rmsg{color:var(--mut);font:13px/1.7 var(--h);padding:28px 8px;text-align:center}#rmsg:empty{display:none}#rmsg:not(:empty)+#rc{display:none}
 #rmsg input{margin-top:10px;color:var(--mut);font:13px var(--h)}
+#rbar{display:flex;gap:10px;justify-content:center;padding:10px 12px calc(10px + env(safe-area-inset-bottom,0px));border-top:1px solid var(--line);background:var(--card)}
+#rbar button{padding:13px 18px;font-size:15px}#rbar #rbn{flex:1;max-width:340px}
+#rext{display:none}button:disabled{opacity:.35;cursor:default}
+body.reading #bal{bottom:calc(88px + env(safe-area-inset-bottom,0px))}
 .note{color:var(--mut);font:12px/1.5 var(--h);margin-top:28px;padding-top:14px;border-top:1px solid var(--line)}
 @media(max-width:520px){.mh .mini{display:none}.mh p{font-size:12px}.tools label{margin-left:0}h1{font-size:19px}}
 </style></head><body><div class="wrap">
@@ -166,7 +170,7 @@ function ui(){bal.hidden=!T||pipOn()}
 function tick(){if(!T)return;const x=fmt(el());$('bt').textContent=x;if(pipOn()){const p=pip.document.getElementById('ptime');if(p)p.textContent=x}}
 setInterval(tick,1000);
 function startTimer(n){if(T)return;T={t:Date.now(),n};S.timer=T;save();ui();tick()}
-function stopTimer(){if(!T)return;const sec=Math.min(el(),21600),s=st(T.n);s.sec=(s.sec||0)+sec;S.total=(S.total||0)+sec;T=null;S.timer=null;save();if(pipOn())pip.close();pip=null;ui();render()}
+function stopTimer(){if(!T)return;const sec=Math.min(el(),21600),s=st(T.n);s.sec=(s.sec||0)+sec;S.total=(S.total||0)+sec;T=null;S.timer=null;save();if(pipOn())pip.close();pip=null;ui();render();rClose()}
 async function openPip(){if(!('documentPictureInPicture' in window)||pipOn())return;
  try{pip=await documentPictureInPicture.requestWindow({width:210,height:64});
  const d=pip.document;d.head.innerHTML='<style>html,body{margin:0;height:100%}body{background:#1f1214;color:#e9ecef;font:600 20px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;user-select:none}i{width:9px;height:9px;border-radius:50%;background:#ff6a6f;animation:b 1.2s infinite}em{font:500 11px system-ui,sans-serif;color:#8a93a0;font-style:normal}@keyframes b{50%{opacity:.25}}</style>';
@@ -175,7 +179,7 @@ async function openPip(){if(!('documentPictureInPicture' in window)||pipOn())ret
 const PJ='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
 let pdfDoc=null,rpage=1,rzoom=1,rR=[0,0],rbusy=false,rpend=false;
 const rd=document.createElement('div');rd.id='rd';rd.hidden=true;
-rd.innerHTML='<div class="rt"><button class="ghost" id="rx">← Voltar</button><div class="rtt"><b id="rtl"></b><span id="rrg" title="Ir ao início do trecho"></span></div><div class="rn"><button class="ghost" id="rp">‹</button><span id="rpg"></span><button class="ghost" id="rnx">›</button></div><div class="rn"><button class="ghost" id="rzm">−</button><button class="ghost" id="rzp">+</button><button class="ghost" id="rinv" title="Inverter cores da página">◐</button></div><a id="rext" class="pl" target="_blank" rel="noopener">Nova aba</a></div><div id="rv"><div id="rmsg"></div><canvas id="rc"></canvas></div>';
+rd.innerHTML='<div class="rt"><button class="ghost" id="rx">← Voltar</button><div class="rtt"><b id="rtl"></b><span id="rrg" title="Ir ao início do trecho"></span></div><div class="rn"><button class="ghost" id="rp">‹</button><span id="rpg"></span><button class="ghost" id="rnx">›</button></div><div class="rn"><button class="ghost" id="rzm">−</button><button class="ghost" id="rzp">+</button><button class="ghost" id="rinv" title="Inverter cores da página">◐</button></div><a id="rext" class="pl" target="_blank" rel="noopener">Nova aba</a></div><div id="rv"><div id="rmsg"></div><canvas id="rc"></canvas></div><div id="rbar"><button class="ghost" id="rbp">‹ Anterior</button><button id="rbn">Próxima página ›</button></div>';
 document.body.appendChild(rd);
 function loadLib(){return window.pdfjsLib?Promise.resolve():new Promise((ok,no)=>{const s=document.createElement('script');s.src=PJ+'pdf.min.js';s.onload=()=>{pdfjsLib.GlobalWorkerOptions.workerSrc=PJ+'pdf.worker.min.js';const w=document.createElement('script');w.src=PJ+'pdf.worker.min.js';w.onload=()=>ok();w.onerror=no;document.head.appendChild(w)};s.onerror=no;document.head.appendChild(s)})}
 const idb=()=>new Promise((ok,no)=>{const r=indexedDB.open('prf120',1);r.onupgradeneeded=()=>r.result.createObjectStore('f');r.onsuccess=()=>ok(r.result);r.onerror=no});
@@ -190,11 +194,12 @@ async function rDraw(){if(!pdfDoc)return;if(rbusy){rpend=true;return}rbusy=true;
  try{const pg=await pdfDoc.getPage(rpage),w=$('rv').clientWidth-24,v0=pg.getViewport({scale:1}),sc=Math.max(.3,w/v0.width)*rzoom,dpr=Math.min(window.devicePixelRatio||1,2),v=pg.getViewport({scale:sc*dpr}),c=$('rc');
  c.width=v.width;c.height=v.height;c.style.width=v.width/dpr+'px';c.style.height=v.height/dpr+'px';await pg.render({canvasContext:c.getContext('2d'),viewport:v}).promise}catch(e){}
  rbusy=false;if(rpend){rpend=false;rDraw()}}
-function rUpd(){const a=rR[0],b=rR[1],inr=a&&rpage>=a&&rpage<=b;$('rpg').textContent=rpage+' / '+(pdfDoc?pdfDoc.numPages:'?');$('rrg').textContent='Ler: págs. '+(a===b?a:a+'–'+b)+(inr?' · no trecho':' · fora do trecho');$('rrg').className=inr?'in':''}
-function gotoPg(p){rpage=Math.min(Math.max(1,p),pdfDoc?pdfDoc.numPages:9999);rUpd();$('rv').scrollTop=0;rDraw()}
-async function openReader(a,b,t,href){rR=[a,b];rpage=a;$('rtl').textContent=t;$('rext').href=href;$('rc').classList.toggle('inv',!!S.inv);rd.hidden=false;document.body.style.overflow='hidden';rUpd();if(await loadDoc())gotoPg(a)}
-function rClose(){rd.hidden=true;document.body.style.overflow=''}
+function rUpd(){const a=rR[0],b=rR[1],last=rpage>=b;$('rpg').textContent='Pág. '+rpage;$('rrg').textContent='Trecho: págs. '+(a===b?a:a+'–'+b)+' · '+(rpage-a+1)+' de '+(b-a+1);$('rrg').className='in';$('rp').disabled=rpage<=a;$('rnx').disabled=last;$('rbp').disabled=rpage<=a;$('rbn').textContent=last?'✓ Concluir trecho':'Próxima página ›'}
+function gotoPg(p){rpage=Math.min(Math.max(rR[0],p),rR[1]);rUpd();$('rv').scrollTop=0;rDraw()}
+async function openReader(a,b,t,href){rR=[a,b];rpage=a;$('rtl').textContent=t;$('rext').href=href;$('rc').classList.toggle('inv',!!S.inv);rd.hidden=false;document.body.style.overflow='hidden';document.body.classList.add('reading');rUpd();if(await loadDoc())gotoPg(a)}
+function rClose(){rd.hidden=true;document.body.style.overflow='';document.body.classList.remove('reading')}
 $('rx').onclick=rClose;$('rp').onclick=()=>gotoPg(rpage-1);$('rnx').onclick=()=>gotoPg(rpage+1);$('rrg').onclick=()=>gotoPg(rR[0]);
+$('rbp').onclick=()=>gotoPg(rpage-1);$('rbn').onclick=()=>{if(rpage>=rR[1]){if(T)stopTimer();else rClose()}else gotoPg(rpage+1)};
 $('rzm').onclick=()=>{rzoom=Math.max(.6,rzoom-.25);rDraw()};$('rzp').onclick=()=>{rzoom=Math.min(3,rzoom+.25);rDraw()};
 $('rinv').onclick=()=>{S.inv=!S.inv;save();$('rc').classList.toggle('inv',!!S.inv)};
 document.addEventListener('keydown',e=>{if(rd.hidden||e.target.tagName==='INPUT')return;if(e.key==='ArrowRight')gotoPg(rpage+1);else if(e.key==='ArrowLeft')gotoPg(rpage-1);else if(e.key==='Escape')rClose()});
