@@ -150,7 +150,7 @@ G.addEventListener('change',e=>{if(!e.target.closest('.mb'))return;const n=nOf(e
  if(e.target.dataset.x!==undefined){const x=+e.target.dataset.x;s.c=e.target.checked?[...new Set([...s.c,x])]:s.c.filter(y=>y!==x)}
  save();render()});
 G.addEventListener('click',e=>{
- const pl=e.target.closest('.pl');if(pl){e.preventDefault();startTimer(nOf(e));openReader(+pl.dataset.a,+pl.dataset.b,pl.dataset.t,pl.href);return}
+ const pl=e.target.closest('.pl');if(pl){e.preventDefault();startTimer(nOf(e),+pl.closest('.ck').querySelector('input').dataset.x);openReader(+pl.dataset.a,+pl.dataset.b,pl.dataset.t,pl.href);return}
  if(e.target.id==='fin'){const n=nOf(e),s=st(n);
   if(s.done)s.done=null;else{const d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());s.done=d.toISOString().slice(0,10);s.c=[...Array(steps(M[n-1])).keys()]}
   save();exp=0;render();return}
@@ -169,8 +169,8 @@ function pipOn(){return pip&&!pip.closed}
 function ui(){bal.hidden=!T||pipOn()}
 function tick(){if(!T)return;const x=fmt(el());$('bt').textContent=x;if(pipOn()){const p=pip.document.getElementById('ptime');if(p)p.textContent=x}}
 setInterval(tick,1000);
-function startTimer(n){if(T)return;T={t:Date.now(),n};S.timer=T;save();ui();tick()}
-function stopTimer(){if(!T)return;const sec=Math.min(el(),21600),s=st(T.n);s.sec=(s.sec||0)+sec;S.total=(S.total||0)+sec;T=null;S.timer=null;save();if(pipOn())pip.close();pip=null;ui();render();rClose()}
+function startTimer(n,x){if(T){T.n=n;T.x=x;S.timer=T;save();return}T={t:Date.now(),n,x};S.timer=T;save();ui();tick()}
+function stopTimer(){if(!T)return;const sec=Math.min(el(),21600),s=st(T.n);s.sec=(s.sec||0)+sec;if(Number.isInteger(T.x)&&!s.c.includes(T.x))s.c.push(T.x);S.total=(S.total||0)+sec;T=null;S.timer=null;save();if(pipOn())pip.close();pip=null;ui();render();rClose()}
 async function openPip(){if(!('documentPictureInPicture' in window)||pipOn())return;
  try{pip=await documentPictureInPicture.requestWindow({width:210,height:64});
  const d=pip.document;d.head.innerHTML='<style>html,body{margin:0;height:100%}body{background:#1f1214;color:#e9ecef;font:600 20px ui-monospace,Menlo,Consolas,monospace;display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;user-select:none}i{width:9px;height:9px;border-radius:50%;background:#ff6a6f;animation:b 1.2s infinite}em{font:500 11px system-ui,sans-serif;color:#8a93a0;font-style:normal}@keyframes b{50%{opacity:.25}}</style>';
